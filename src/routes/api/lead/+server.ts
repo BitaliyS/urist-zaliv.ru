@@ -1,5 +1,6 @@
 import { dev } from '$app/environment';
 import { json, type RequestHandler } from '@sveltejs/kit';
+import { formatRuPhone, isValidRuPhone } from '$lib/phone';
 import { markLeadNotified, saveLead } from '$lib/server/lead-db';
 import { leadNotifyConfigured, sendLeadEmail } from '$lib/server/lead-mail';
 import { ntfyConfigured, sendLeadNtfy } from '$lib/server/lead-ntfy';
@@ -12,15 +13,17 @@ const clean = (value: FormDataEntryValue | null, max: number) =>
 export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 	const form = await request.formData();
 	const name = clean(form.get('name'), 80);
-	const phone = clean(form.get('phone'), 40);
+	const phoneRaw = clean(form.get('phone'), 40);
 	const message = clean(form.get('message'), 1200);
 	const consent = form.get('consent') === 'yes';
 	const honeypot = clean(form.get('company'), 100);
 
 	if (honeypot) return json({ ok: true });
-	if (!name || phone.length < 7 || !consent) {
+	if (!name || !isValidRuPhone(phoneRaw) || !consent) {
 		return json({ ok: false, error: 'Проверьте обязательные поля' }, { status: 400 });
 	}
+
+	const phone = formatRuPhone(phoneRaw);
 
 	const payload = {
 		name,

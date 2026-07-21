@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { landing } from '$lib/content/landing';
+	import { formatRuPhone, isValidRuPhone } from '$lib/phone';
 	import { reachGoal } from '$lib/metrika';
 	import JsonLd from '$lib/seo/JsonLd.svelte';
 	import { homeGraph } from '$lib/seo/schema';
@@ -39,38 +40,15 @@
 
 	let formStarted = $state(false);
 	let submitting = $state(false);
-	let formStatus = $state<'idle' | 'success' | 'error'>('idle');
+	let formStatus = $state<'idle' | 'success' | 'error' | 'invalid'>('idle');
 	let phoneValue = $state('');
 	let consentAccepted = $state(false);
 	let tickerTrackEl: HTMLDivElement | undefined = $state();
 	let tickerShift = $state(0);
 
-	function digitsOnly(value: string) {
-		return value.replace(/\D/g, '');
-	}
-
-	function formatRuPhone(value: string) {
-		let digits = digitsOnly(value);
-		if (digits.startsWith('8')) digits = `7${digits.slice(1)}`;
-		if (!digits.startsWith('7')) digits = `7${digits}`;
-		digits = digits.slice(0, 11);
-
-		const local = digits.slice(1);
-		let formatted = '+7';
-		if (!local.length) return formatted;
-
-		formatted += ` (${local.slice(0, Math.min(3, local.length))}`;
-		if (local.length >= 3) formatted += ')';
-		if (local.length > 3) formatted += ` ${local.slice(3, Math.min(6, local.length))}`;
-		if (local.length > 6) formatted += `-${local.slice(6, Math.min(8, local.length))}`;
-		if (local.length > 8) formatted += `-${local.slice(8, Math.min(10, local.length))}`;
-		return formatted;
-	}
-
 	function onPhoneInput(event: Event) {
 		const input = event.currentTarget as HTMLInputElement;
 		phoneValue = formatRuPhone(input.value);
-		input.value = phoneValue;
 	}
 
 	function measureTicker() {
@@ -97,17 +75,21 @@
 		submitting = true;
 		formStatus = 'idle';
 		const formEl = event.currentTarget as HTMLFormElement;
+		const phoneField = formEl.elements.namedItem('phone') as HTMLInputElement | null;
+		const phoneRaw = phoneValue || phoneField?.value || '';
 
-		if (digitsOnly(phoneValue).length !== 11) {
-			formStatus = 'error';
+		if (!isValidRuPhone(phoneRaw)) {
+			formStatus = 'invalid';
 			submitting = false;
 			return;
 		}
 
 		try {
+			const body = new FormData(formEl);
+			body.set('phone', formatRuPhone(phoneRaw));
 			const response = await fetch('/api/lead', {
 				method: 'POST',
-				body: new FormData(formEl)
+				body
 			});
 
 			if (!response.ok) throw new Error('Lead request failed');
@@ -483,9 +465,8 @@
 						autocomplete="tel"
 						required
 						placeholder={form.phonePlaceholder}
-						value={phoneValue}
+						bind:value={phoneValue}
 						oninput={onPhoneInput}
-						minlength="18"
 						maxlength="18"
 					/>
 				</label>
@@ -504,6 +485,8 @@
 				</button>
 				{#if formStatus === 'success'}
 					<p class="form-message success">{form.success}</p>
+				{:else if formStatus === 'invalid'}
+					<p class="form-message error">{form.invalidPhone}</p>
 				{:else if formStatus === 'error'}
 					<p class="form-message error">{form.error}</p>
 				{/if}

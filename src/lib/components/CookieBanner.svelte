@@ -30,7 +30,7 @@
 				Cookie и Метрика.
 				<a href="/politika-konfidencialnosti">Политика</a>
 			</p>
-			<button type="button" class="cookie-banner__btn" onclick={accept}>OK</button>
+			<button type="button" class="cookie-banner__btn" onclick={accept}>Принять</button>
 		</div>
 	</div>
 {/if}
@@ -78,9 +78,9 @@
 
 	.cookie-banner__btn {
 		flex-shrink: 0;
-		height: 26px;
-		min-width: 36px;
-		padding: 0 11px;
+		height: 28px;
+		min-width: 78px;
+		padding: 0 14px;
 		border: 1px solid var(--ink);
 		border-radius: 999px;
 		background: var(--gold-light);
@@ -121,8 +121,8 @@
 		}
 
 		.cookie-banner__btn {
-			height: 24px;
-			min-width: 34px;
+			height: 26px;
+			min-width: 68px;
 			padding: 0 10px;
 			font-size: 0.66rem;
 		}

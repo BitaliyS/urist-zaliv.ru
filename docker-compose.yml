@@ -3,7 +3,9 @@
 # - project name: urist-zaliv
 # - наружу только 127.0.0.1:3020 — без своего :80/:443
 #   (3010 занят frontend ЮрАгента — НЕ занимать)
-# - TLS и публичный вход — через уже существующий nginx ЮрАгента (server_name)
+# - TLS и публичный вход — через nginx ЮрАгента (server_name)
+# - сеть ur-agent_internal: чтобы nginx видел urist-zaliv-web:3000
+# Канон деплоя: deploy/README.md
 
 name: urist-zaliv
 
@@ -39,7 +41,9 @@ services:
     ports:
       # Только localhost хоста — nginx ЮрАгента проксирует сюда
       - '127.0.0.1:3020:3000'
-    # Сеть по умолчанию compose-проекта urist-zaliv_* — не трогает ur-agent-*
+    networks:
+      - default
+      - ur_agent_internal
     healthcheck:
       test:
         [
@@ -52,3 +56,8 @@ services:
       timeout: 5s
       retries: 3
       start_period: 15s
+
+networks:
+  ur_agent_internal:
+    external: true
+    name: ur-agent_internal

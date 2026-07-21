@@ -3,6 +3,7 @@
 	import SiteHeader from '$lib/components/SiteHeader.svelte';
 	import { getCategory } from '$lib/content/categories';
 	import { landing } from '$lib/content/landing';
+	import { formatRuPhone, isValidRuPhone } from '$lib/phone';
 	import JsonLd from '$lib/seo/JsonLd.svelte';
 	import { articleGraph } from '$lib/seo/schema';
 	import { absoluteUrl } from '$lib/seo/site';
@@ -19,9 +20,10 @@
 
 	let formStarted = $state(false);
 	let submitting = $state(false);
-	let formStatus = $state<'idle' | 'success' | 'error'>('idle');
+	let formStatus = $state<'idle' | 'success' | 'error' | 'invalid'>('idle');
 	let phoneValue = $state('');
 	let consentAccepted = $state(false);
+	const formCopy = landing.consultation.form;
 
 	function introText(item: string | { text: string; highlight?: boolean }) {
 		return typeof item === 'string' ? item : item.text;
@@ -47,32 +49,9 @@
 		return parts.length ? parts : [{ type: 'text', value: text }];
 	}
 
-	function digitsOnly(value: string) {
-		return value.replace(/\D/g, '');
-	}
-
-	function formatRuPhone(value: string) {
-		let digits = digitsOnly(value);
-		if (digits.startsWith('8')) digits = `7${digits.slice(1)}`;
-		if (!digits.startsWith('7')) digits = `7${digits}`;
-		digits = digits.slice(0, 11);
-
-		const local = digits.slice(1);
-		let formatted = '+7';
-		if (!local.length) return formatted;
-
-		formatted += ` (${local.slice(0, Math.min(3, local.length))}`;
-		if (local.length >= 3) formatted += ')';
-		if (local.length > 3) formatted += ` ${local.slice(3, Math.min(6, local.length))}`;
-		if (local.length > 6) formatted += `-${local.slice(6, Math.min(8, local.length))}`;
-		if (local.length > 8) formatted += `-${local.slice(8, Math.min(10, local.length))}`;
-		return formatted;
-	}
-
 	function onPhoneInput(event: Event) {
 		const input = event.currentTarget as HTMLInputElement;
 		phoneValue = formatRuPhone(input.value);
-		input.value = phoneValue;
 	}
 
 	async function submitLead(event: SubmitEvent) {
@@ -80,23 +59,27 @@
 		if (!consentAccepted) return;
 		submitting = true;
 		formStatus = 'idle';
-		const form = event.currentTarget as HTMLFormElement;
+		const formEl = event.currentTarget as HTMLFormElement;
+		const phoneField = formEl.elements.namedItem('phone') as HTMLInputElement | null;
+		const phoneRaw = phoneValue || phoneField?.value || '';
 
-		if (digitsOnly(phoneValue).length !== 11) {
-			formStatus = 'error';
+		if (!isValidRuPhone(phoneRaw)) {
+			formStatus = 'invalid';
 			submitting = false;
 			return;
 		}
 
 		try {
+			const body = new FormData(formEl);
+			body.set('phone', formatRuPhone(phoneRaw));
 			const response = await fetch('/api/lead', {
 				method: 'POST',
-				body: new FormData(form)
+				body
 			});
 
 			if (!response.ok) throw new Error('Lead request failed');
 			formStatus = 'success';
-			form.reset();
+			formEl.reset();
 			phoneValue = '';
 			consentAccepted = false;
 		} catch {
@@ -314,9 +297,8 @@
 					autocomplete="tel"
 					required
 					placeholder="+7 (___) ___-__-__"
-					value={phoneValue}
+					bind:value={phoneValue}
 					oninput={onPhoneInput}
-					minlength="18"
 					maxlength="18"
 				/>
 			</label>
@@ -339,11 +321,11 @@
 				{submitting ? 'Отправляю…' : 'Оценить перспективы бесплатно'}
 			</button>
 			{#if formStatus === 'success'}
-				<p class="form-message success">Заявка принята. Я свяжусь с вами в ближайшее время.</p>
+				<p class="form-message success">{formCopy.success}</p>
+			{:else if formStatus === 'invalid'}
+				<p class="form-message error">{formCopy.invalidPhone}</p>
 			{:else if formStatus === 'error'}
-				<p class="form-message error">
-					Проверьте номер телефона в формате +7 (999) 999-99-99 или напишите в Telegram.
-				</p>
+				<p class="form-message error">{formCopy.error}</p>
 			{/if}
 		</form>
 	</div>

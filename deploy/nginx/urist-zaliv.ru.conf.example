@@ -1,68 +1,38 @@
-# Пример server-блока для nginx ЮрАгента (НЕ поднимать второй nginx на :80/:443).
+# Канон для nginx ЮрАгента: блоки urist-zaliv.ru
 #
-# Куда класть (типично):
-#   /opt/ur-agent/.../nginx/conf.d/urist-zaliv.ru.conf
-# или volume include, как у вас уже подключены остальные сайты.
+# Живой conf: /opt/ur-agent/deploy/nginx.conf → /etc/nginx/conf.d/default.conf
+# Полная процедура: ../README.md
 #
-# Upstream: приложение слушает ТОЛЬКО на хосте 127.0.0.1:3020
-# (см. docker-compose.yml проекта urist-zaliv).
-# Порт 3010 занят frontend ЮрАгента — не использовать.
-#
-# Из контейнера nginx «localhost» — это сам nginx, не хост.
-# Варианты proxy_pass (выберите один после проверки):
-#   1) host.docker.internal:3020  — если в nginx-контейнере есть host-gateway
-#   2) 172.17.0.1:3020           — docker0 gateway на многих Linux
-#   3) urist-zaliv-web:3000      — если контейнер подключён к сети nginx (предпочтительно)
-#
-# Перед продом: docker network ls | grep -E 'ur-agent|nginx'
-# и при необходимости: docker network connect <сеть_nginx> urist-zaliv-web
+# КРИТИЧНО:
+# - НЕ использовать static upstream { server urist-zaliv-web:3000; }
+#   (nginx падает при старте, если имя ещё не в сети).
+# - После правки conf на хосте: docker compose up -d --force-recreate nginx
+#   (из /opt/ur-agent), предварительно:
+#   docker network connect ur-agent_internal urist-zaliv-web
+# - НЕ дублировать proxy_*_timeout после include proxy_common.conf
 
-upstream urist_zaliv_upstream {
-    # Замените на рабочий вариант из комментария выше
-    server host.docker.internal:3020;
-    keepalive 8;
-}
-
+# --- urist-zaliv.ru ---
 server {
     listen 80;
-    listen [::]:80;
     server_name urist-zaliv.ru www.urist-zaliv.ru;
-
-    # После выпуска сертификата certbot обычно добавит listen 443 и ssl_certificate.
-    # Не трогайте сертификаты ur-agent.ru.
-
-    location /.well-known/acme-challenge/ {
-        root /var/www/certbot;
-    }
-
-    location / {
-        return 301 https://$host$request_uri;
-    }
+    return 301 https://urist-zaliv.ru$request_uri;
 }
 
 server {
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
+    listen 443 ssl;
+    http2 on;
     server_name urist-zaliv.ru www.urist-zaliv.ru;
 
-    # Пути к сертификатам подставьте после certbot / вашего процесса.
-    # Пример (Let's Encrypt):
-    # ssl_certificate     /etc/letsencrypt/live/urist-zaliv.ru/fullchain.pem;
-    # ssl_certificate_key /etc/letsencrypt/live/urist-zaliv.ru/privkey.pem;
-
-    # Если используете общий сниппет SSL ЮрАгента — include его сюда.
-    # include /etc/nginx/snippets/ssl-params.conf;
-
-    client_max_body_size 4m;
+    ssl_certificate     /etc/nginx/certs/urist-zaliv.ru/fullchain.pem;
+    ssl_certificate_key /etc/nginx/certs/urist-zaliv.ru/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
 
     location / {
-        proxy_pass http://urist_zaliv_upstream;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header Connection "";
-        proxy_read_timeout 60s;
+        resolver 127.0.0.11 ipv6=off valid=10s;
+        set $zaliv_upstream http://urist-zaliv-web:3000;
+        proxy_pass $zaliv_upstream;
+        include /etc/nginx/proxy_common.conf;
     }
 }
