@@ -14,7 +14,8 @@ export async function sendLeadNtfy(payload: LeadPayload): Promise<void> {
 
 	const headers: Record<string, string> = {
 		'Content-Type': 'text/plain; charset=utf-8',
-		Title: `Заявка urist-zaliv.ru: ${payload.name}`,
+		// undici: header values must be ByteString — no Cyrillic in Title
+		Title: `Lead urist-zaliv.ru: ${payload.name}`.replace(/[^\x00-\xFF]/g, '?'),
 		Tags: 'incoming_envelope',
 		Priority: '4'
 	};

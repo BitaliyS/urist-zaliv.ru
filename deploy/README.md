@@ -12,10 +12,45 @@
 | App port на хосте | `127.0.0.1:3010` | `127.0.0.1:3020` → контейнер `:3000` |
 | Сеть с nginx | `ur-agent_internal` | тот же (через compose `external`) |
 | БД | Postgres `:5432` | SQLite `./data/leads.sqlite` |
-| GitHub | — | https://github.com/BitaliyS/urist-zaliv.ru |
-| SSL | `/opt/ur-agent/deploy/certs/ur-agent.ru/` | `/opt/ur-agent/deploy/certs/urist-zaliv.ru/` (копия LE) |
+| GitHub | — | https://github.com/BitaliyS/urist-zaliv.ru (**private**) |
 
 **Запрещено:** `docker compose down` в `/opt/ur-agent`; второй nginx на 80/443; трогать `.env` / Hermes / порты 5432/8011/3010 ЮрАгента; `upstream hostname` без resolver (см. ниже).
+
+---
+
+## Доступ к приватному репо с VPS (deploy key)
+
+Репозиторий **private** — обычный `git pull` по HTTPS без логина не сработает. На сервере — **read-only deploy key** (один раз):
+
+```bash
+# на VPS
+ssh-keygen -t ed25519 -C 'urist-zaliv-deploy' -f /root/.ssh/urist-zaliv_deploy -N ''
+cat /root/.ssh/urist-zaliv_deploy.pub
+```
+
+В GitHub: **Settings → Deploy keys → Add deploy key** → вставить pubkey, **Allow write access** не включать.
+
+```bash
+# SSH alias только для этого репо
+cat >> /root/.ssh/config << 'EOF'
+Host github.com-urist-zaliv
+  HostName github.com
+  User git
+  IdentityFile /root/.ssh/urist-zaliv_deploy
+  IdentitiesOnly yes
+EOF
+chmod 600 /root/.ssh/config /root/.ssh/urist-zaliv_deploy
+
+cd /opt/urist-zaliv
+git remote set-url origin git@github.com-urist-zaliv:BitaliyS/urist-zaliv.ru.git
+git fetch && git status -sb
+```
+
+Дальше релизы как обычно: `git pull && docker compose -p urist-zaliv up -d --build`.
+
+Альтернатива: PAT с правом `contents:read` в URL (`https://USER:TOKEN@github.com/...`) — хуже (токен шире и светится в remote).
+
+Локально (Mac): `gh auth login` или SSH-ключ аккаунта GitHub — как обычно.
 
 ---
 
