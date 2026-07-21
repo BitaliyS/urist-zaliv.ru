@@ -1,0 +1,54 @@
+# Изоляция от ЮрАгента:
+# - каталог на сервере: /opt/urist-zaliv (НЕ /opt/ur-agent)
+# - project name: urist-zaliv
+# - наружу только 127.0.0.1:3020 — без своего :80/:443
+#   (3010 занят frontend ЮрАгента — НЕ занимать)
+# - TLS и публичный вход — через уже существующий nginx ЮрАгента (server_name)
+
+name: urist-zaliv
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:-https://urist-zaliv.ru}
+        PUBLIC_YANDEX_METRIKA_ID: ${PUBLIC_YANDEX_METRIKA_ID:-}
+        PUBLIC_YANDEX_WEBVISOR: ${PUBLIC_YANDEX_WEBVISOR:-false}
+        PUBLIC_INDEXNOW_KEY: ${PUBLIC_INDEXNOW_KEY:-b7e3f2a1c4d8490e8f1a2b3c4d5e6f70}
+    image: urist-zaliv-web:latest
+    container_name: urist-zaliv-web
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3000
+      NODE_ENV: production
+      PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:-https://urist-zaliv.ru}
+      # Нужно за reverse-proxy nginx (CSRF / абсолютные URL)
+      ORIGIN: ${PUBLIC_SITE_URL:-https://urist-zaliv.ru}
+      PROTOCOL_HEADER: x-forwarded-proto
+      HOST_HEADER: host
+      ADDRESS_HEADER: x-forwarded-for
+      XFF_DEPTH: 1
+      LEAD_DB_PATH: /app/data/leads.sqlite
+    volumes:
+      - ./data:/app/data
+    ports:
+      # Только localhost хоста — nginx ЮрАгента проксирует сюда
+      - '127.0.0.1:3020:3000'
+    # Сеть по умолчанию compose-проекта urist-zaliv_* — не трогает ur-agent-*
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
