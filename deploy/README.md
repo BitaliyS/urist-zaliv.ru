@@ -130,6 +130,13 @@ Renewal LE: серты живут в `/etc/letsencrypt/live/urist-zaliv.ru/`; п
 
 Проверка: `sqlite3 /opt/urist-zaliv/data/leads.sqlite 'SELECT id,phone,created_at FROM leads ORDER BY id DESC LIMIT 5;'`
 
+Каталог `data/` должен быть доступен пользователю контейнера (`app`). В образе entrypoint сам делает `chown` на `/app/data`. Вручную на хосте:
+
+```bash
+mkdir -p /opt/urist-zaliv/data && chown -R 100:101 /opt/urist-zaliv/data
+# uid/gid alpine app — уточнить: docker exec urist-zaliv-web id app
+```
+
 ## Метрика / cookies
 
 `PUBLIC_YANDEX_METRIKA_ID` передаётся как **Docker build ARG** (см. `Dockerfile` / compose) — иначе в клиентский бандл не попадёт (`.env` в `.dockerignore`). Скрипт грузится только после кнопки **«Принять»** в cookie-баннере.

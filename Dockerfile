@@ -27,10 +27,14 @@ ENV NODE_ENV=production
 ENV HOST=0.0.0.0
 ENV PORT=3000
 ENV LEAD_DB_PATH=/app/data/leads.sqlite
-RUN addgroup -S app && adduser -S app -G app && mkdir -p /app/data && chown app:app /app/data
+RUN apk add --no-cache su-exec libstdc++ \
+	&& addgroup -S app && adduser -S app -G app \
+	&& mkdir -p /app/data && chown app:app /app/data
 COPY --from=build --chown=app:app /app/build ./build
 COPY --from=build --chown=app:app /app/package.json ./package.json
 COPY --from=build --chown=app:app /app/node_modules ./node_modules
-USER app
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+# entrypoint стартует root → chown data → su-exec app
 EXPOSE 3000
-CMD ["node", "build"]
+ENTRYPOINT ["/docker-entrypoint.sh"]
