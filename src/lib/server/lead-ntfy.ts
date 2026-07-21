@@ -5,6 +5,12 @@ export function ntfyConfigured(): boolean {
 	return Boolean(env.NTFY_TOPIC?.trim());
 }
 
+/** undici Headers require ByteString; ntfy accepts RFC 2047 for Unicode titles. */
+function ntfyHeaderValue(value: string): string {
+	if (/^[\x00-\x7F]*$/.test(value)) return value;
+	return `=?UTF-8?B?${Buffer.from(value, 'utf8').toString('base64')}?=`;
+}
+
 export async function sendLeadNtfy(payload: LeadPayload): Promise<void> {
 	const topic = env.NTFY_TOPIC?.trim();
 	if (!topic) throw new Error('NTFY_TOPIC not configured');
@@ -14,8 +20,7 @@ export async function sendLeadNtfy(payload: LeadPayload): Promise<void> {
 
 	const headers: Record<string, string> = {
 		'Content-Type': 'text/plain; charset=utf-8',
-		// undici: header values must be ByteString — no Cyrillic in Title
-		Title: `Lead urist-zaliv.ru: ${payload.name}`.replace(/[^\x00-\xFF]/g, '?'),
+		Title: ntfyHeaderValue(`Заявка: ${payload.name}`),
 		Tags: 'incoming_envelope',
 		Priority: '4'
 	};

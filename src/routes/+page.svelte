@@ -98,12 +98,22 @@
 			phoneValue = '';
 			consentAccepted = false;
 			reachGoal('lead_form_success');
+			queueMicrotask(() => successBannerEl?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
 		} catch {
 			formStatus = 'error';
 		} finally {
 			submitting = false;
 		}
 	}
+
+	function resetForm() {
+		formStatus = 'idle';
+		phoneValue = '';
+		consentAccepted = false;
+	}
+
+	let successBannerEl: HTMLElement | undefined = $state();
+
 </script>
 
 <svelte:head>
@@ -448,47 +458,58 @@
 					}
 				}}
 			>
-				<label class="honeypot" aria-hidden="true">
-					<span>Компания</span>
-					<input name="company" tabindex="-1" autocomplete="off" />
-				</label>
-				<label>
-					<span>{form.nameLabel}</span>
-					<input name="name" autocomplete="name" required placeholder={form.namePlaceholder} />
-				</label>
-				<label>
-					<span>{form.phoneLabel}</span>
-					<input
-						name="phone"
-						type="tel"
-						inputmode="tel"
-						autocomplete="tel"
-						required
-						placeholder={form.phonePlaceholder}
-						bind:value={phoneValue}
-						oninput={onPhoneInput}
-						maxlength="18"
-					/>
-				</label>
-				<label>
-					<span>{form.messageLabel}</span>
-					<textarea name="message" rows="4" placeholder={form.messagePlaceholder}></textarea>
-				</label>
-				<label class="consent">
-					<input name="consent" type="checkbox" value="yes" bind:checked={consentAccepted} required />
-					<span
-						>{form.consentPrefix}<a href="/politika-konfidencialnosti">{form.consentLink}</a></span
-					>
-				</label>
-				<button class="button" type="submit" disabled={submitting || !consentAccepted}>
-					{submitting ? form.submitting : form.submit}
-				</button>
 				{#if formStatus === 'success'}
-					<p class="form-message success">{form.success}</p>
-				{:else if formStatus === 'invalid'}
-					<p class="form-message error">{form.invalidPhone}</p>
-				{:else if formStatus === 'error'}
-					<p class="form-message error">{form.error}</p>
+					<div
+						class="form-success"
+						bind:this={successBannerEl}
+						role="status"
+						aria-live="polite"
+					>
+						<strong>{form.successTitle}</strong>
+						<p>{form.success}</p>
+						<button class="button" type="button" onclick={resetForm}>{form.successAgain}</button>
+					</div>
+				{:else}
+					<label class="honeypot" aria-hidden="true">
+						<span>Компания</span>
+						<input name="company" tabindex="-1" autocomplete="off" />
+					</label>
+					<label>
+						<span>{form.nameLabel}</span>
+						<input name="name" autocomplete="name" required placeholder={form.namePlaceholder} />
+					</label>
+					<label>
+						<span>{form.phoneLabel}</span>
+						<input
+							name="phone"
+							type="tel"
+							inputmode="tel"
+							autocomplete="tel"
+							required
+							placeholder={form.phonePlaceholder}
+							bind:value={phoneValue}
+							oninput={onPhoneInput}
+							maxlength="18"
+						/>
+					</label>
+					<label>
+						<span>{form.messageLabel}</span>
+						<textarea name="message" rows="4" placeholder={form.messagePlaceholder}></textarea>
+					</label>
+					<label class="consent">
+						<input name="consent" type="checkbox" value="yes" bind:checked={consentAccepted} required />
+						<span
+							>{form.consentPrefix}<a href="/politika-konfidencialnosti">{form.consentLink}</a></span
+						>
+					</label>
+					<button class="button" type="submit" disabled={submitting || !consentAccepted}>
+						{submitting ? form.submitting : form.submit}
+					</button>
+					{#if formStatus === 'invalid'}
+						<p class="form-message error">{form.invalidPhone}</p>
+					{:else if formStatus === 'error'}
+						<p class="form-message error">{form.error}</p>
+					{/if}
 				{/if}
 			</form>
 		</div>
@@ -1275,12 +1296,34 @@
 		font-size: 0.8rem;
 	}
 
-	.form-message.success {
-		color: #9fd6c8;
-	}
-
 	.form-message.error {
 		color: #efaaa1;
+	}
+
+	.form-success {
+		display: grid;
+		gap: 12px;
+		padding: 18px 16px;
+		border: 1px solid rgba(159, 214, 200, 0.55);
+		border-radius: 12px;
+		background: rgba(159, 214, 200, 0.12);
+	}
+
+	.form-success strong {
+		font-size: 1.15rem;
+		color: #c8f0e4;
+	}
+
+	.form-success p {
+		margin: 0;
+		color: rgba(244, 240, 231, 0.88);
+		font-size: 0.92rem;
+		line-height: 1.45;
+	}
+
+	.form-success .button {
+		justify-self: start;
+		margin-top: 4px;
 	}
 
 	footer {

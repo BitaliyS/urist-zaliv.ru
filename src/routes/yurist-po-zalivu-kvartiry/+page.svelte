@@ -46,11 +46,18 @@
 	let formStatus = $state<'idle' | 'success' | 'error' | 'invalid'>('idle');
 	let phoneValue = $state('');
 	let consentAccepted = $state(false);
+	let successBannerEl: HTMLElement | undefined = $state();
 	const formCopy = landing.consultation.form;
 
 	function onPhoneInput(event: Event) {
 		const input = event.currentTarget as HTMLInputElement;
 		phoneValue = formatRuPhone(input.value);
+	}
+
+	function resetForm() {
+		formStatus = 'idle';
+		phoneValue = '';
+		consentAccepted = false;
 	}
 
 	async function submitLead(event: SubmitEvent) {
@@ -80,6 +87,7 @@
 			formEl.reset();
 			phoneValue = '';
 			consentAccepted = false;
+			queueMicrotask(() => successBannerEl?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
 		} catch {
 			formStatus = 'error';
 		} finally {
@@ -370,52 +378,63 @@
 					if (!formStarted && browser) formStarted = true;
 				}}
 			>
-				<label class="honeypot" aria-hidden="true">
-					<span>Компания</span>
-					<input name="company" tabindex="-1" autocomplete="off" />
-				</label>
-				<label>
-					<span>Как к вам обращаться</span>
-					<input name="name" autocomplete="name" required placeholder="Имя" />
-				</label>
-				<label>
-					<span>Телефон</span>
-					<input
-						name="phone"
-						type="tel"
-						inputmode="tel"
-						autocomplete="tel"
-						required
-						placeholder="+7 (___) ___-__-__"
-						bind:value={phoneValue}
-						oninput={onPhoneInput}
-						maxlength="18"
-					/>
-				</label>
-				<label>
-					<span>Что произошло</span>
-					<textarea
-						name="message"
-						rows="4"
-						placeholder="Например: затопили соседи сверху, акт уже есть"
-					></textarea>
-				</label>
-				<label class="consent">
-					<input name="consent" type="checkbox" value="yes" bind:checked={consentAccepted} required />
-					<span>
-						Согласен с
-						<a href="/politika-konfidencialnosti">обработкой персональных данных</a>
-					</span>
-				</label>
-				<button class="button" type="submit" disabled={submitting || !consentAccepted}>
-					{submitting ? 'Отправляю…' : 'Заказать звонок'}
-				</button>
 				{#if formStatus === 'success'}
-					<p class="form-message success">{formCopy.success}</p>
-				{:else if formStatus === 'invalid'}
-					<p class="form-message error">{formCopy.invalidPhone}</p>
-				{:else if formStatus === 'error'}
-					<p class="form-message error">{formCopy.error}</p>
+					<div
+						class="form-success"
+						bind:this={successBannerEl}
+						role="status"
+						aria-live="polite"
+					>
+						<strong>{formCopy.successTitle}</strong>
+						<p>{formCopy.success}</p>
+						<button class="button" type="button" onclick={resetForm}>{formCopy.successAgain}</button>
+					</div>
+				{:else}
+					<label class="honeypot" aria-hidden="true">
+						<span>Компания</span>
+						<input name="company" tabindex="-1" autocomplete="off" />
+					</label>
+					<label>
+						<span>Как к вам обращаться</span>
+						<input name="name" autocomplete="name" required placeholder="Имя" />
+					</label>
+					<label>
+						<span>Телефон</span>
+						<input
+							name="phone"
+							type="tel"
+							inputmode="tel"
+							autocomplete="tel"
+							required
+							placeholder="+7 (___) ___-__-__"
+							bind:value={phoneValue}
+							oninput={onPhoneInput}
+							maxlength="18"
+						/>
+					</label>
+					<label>
+						<span>Что произошло</span>
+						<textarea
+							name="message"
+							rows="4"
+							placeholder="Например: затопили соседи сверху, акт уже есть"
+						></textarea>
+					</label>
+					<label class="consent">
+						<input name="consent" type="checkbox" value="yes" bind:checked={consentAccepted} required />
+						<span>
+							Согласен с
+							<a href="/politika-konfidencialnosti">обработкой персональных данных</a>
+						</span>
+					</label>
+					<button class="button" type="submit" disabled={submitting || !consentAccepted}>
+						{submitting ? 'Отправляю…' : 'Заказать звонок'}
+					</button>
+					{#if formStatus === 'invalid'}
+						<p class="form-message error">{formCopy.invalidPhone}</p>
+					{:else if formStatus === 'error'}
+						<p class="form-message error">{formCopy.error}</p>
+					{/if}
 				{/if}
 			</form>
 		</div>
@@ -646,12 +665,34 @@
 		font-size: 0.8rem;
 	}
 
-	.form-message.success {
-		color: var(--success);
-	}
-
 	.form-message.error {
 		color: var(--danger);
+	}
+
+	.form-success {
+		display: grid;
+		gap: 12px;
+		padding: 18px 16px;
+		border: 1px solid color-mix(in srgb, var(--success) 55%, var(--ink));
+		border-radius: 12px;
+		background: color-mix(in srgb, var(--success) 12%, transparent);
+	}
+
+	.form-success strong {
+		font-size: 1.15rem;
+		color: var(--ink);
+	}
+
+	.form-success p {
+		margin: 0;
+		color: var(--ink-soft);
+		font-size: 0.92rem;
+		line-height: 1.45;
+	}
+
+	.form-success .button {
+		justify-self: start;
+		margin-top: 4px;
 	}
 
 	footer {
