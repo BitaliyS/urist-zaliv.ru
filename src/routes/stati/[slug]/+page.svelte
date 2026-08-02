@@ -141,7 +141,15 @@
 
 	{#if article.intro?.length}
 		{#each article.intro as paragraph}
-			<p class:intro-highlight={introHighlight(paragraph)}>{introText(paragraph)}</p>
+			<p class:intro-highlight={introHighlight(paragraph)}>
+				{#each parseInlineLinks(introText(paragraph)) as part}
+					{#if part.type === 'link'}
+						<a href={part.href}>{part.text}</a>
+					{:else}
+						{part.value}
+					{/if}
+				{/each}
+			</p>
 		{/each}
 	{/if}
 
@@ -176,7 +184,17 @@
 			{/each}
 			{#if section.items}
 				<ul>
-					{#each section.items as item}<li>{item}</li>{/each}
+					{#each section.items as item}
+						<li>
+							{#each parseInlineLinks(item) as part}
+								{#if part.type === 'link'}
+									<a href={part.href}>{part.text}</a>
+								{:else}
+									{part.value}
+								{/if}
+							{/each}
+						</li>
+					{/each}
 				</ul>
 			{/if}
 			{#if section.risks?.length}
@@ -188,6 +206,31 @@
 						</li>
 					{/each}
 				</ul>
+			{/if}
+			{#if section.table}
+				<div class="article-table-wrap">
+					<table class="article-table">
+						{#if section.table.caption}
+							<caption>{section.table.caption}</caption>
+						{/if}
+						<thead>
+							<tr>
+								{#each section.table.headers as header}
+									<th scope="col">{header}</th>
+								{/each}
+							</tr>
+						</thead>
+						<tbody>
+							{#each section.table.rows as row}
+								<tr>
+									{#each row as cell}
+										<td>{cell}</td>
+									{/each}
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
 			{/if}
 			{#if section.template}
 				<div class="word-doc" role="region" aria-label={section.templateLabel ?? 'Шаблон документа'}>
@@ -502,6 +545,46 @@
 	.word-doc__bar small {
 		color: #66727c;
 		font-weight: 500;
+	}
+
+	.article-table-wrap {
+		overflow-x: auto;
+		margin: 1.25rem 0 1.5rem;
+		border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+		border-radius: 2px;
+	}
+
+	.article-table {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: 0.95rem;
+		line-height: 1.45;
+	}
+
+	.article-table caption {
+		caption-side: top;
+		text-align: left;
+		padding: 0.75rem 1rem;
+		font-weight: 600;
+		background: color-mix(in srgb, var(--ink) 4%, transparent);
+		border-bottom: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+	}
+
+	.article-table th,
+	.article-table td {
+		padding: 0.7rem 1rem;
+		text-align: left;
+		vertical-align: top;
+		border-bottom: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+	}
+
+	.article-table th {
+		font-weight: 600;
+		background: color-mix(in srgb, var(--ink) 3%, transparent);
+	}
+
+	.article-table tbody tr:last-child td {
+		border-bottom: none;
 	}
 
 	.claim-template {

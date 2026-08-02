@@ -2,6 +2,7 @@
 	import { browser } from '$app/environment';
 	import SiteHeader from '$lib/components/SiteHeader.svelte';
 	import { landing } from '$lib/content/landing';
+	import { yuristPage } from '$lib/content/yurist-page';
 	import { formatRuPhone, isValidRuPhone } from '$lib/phone';
 	import JsonLd from '$lib/seo/JsonLd.svelte';
 	import {
@@ -130,11 +131,11 @@
 				<h1>Юрист по заливу квартиры — взыскание ущерба с виновника</h1>
 				<p class="lead">
 					Вас залили соседи сверху? Или прорвало трубу по вине управляющей компании? Это всегда
-					неприятно, а часто и очень дорого. Мебель испорчена, ремонт безнадёжно повреждён, а
+					неприятно, а часто и очень дорого. Мебель испорчена, ремонт безнадежно поврежден, а
 					виновник только кормит обещаниями или вообще делает вид, что ничего не произошло.
 				</p>
 				<p>
-					Вы пытаетесь договориться, звоните в УК, но время идёт, а ущерб только растёт.
+					Вы пытаетесь договориться, звоните в УК, но время идет, а ущерб только растет.
 					Самостоятельно добиться справедливости очень сложно. Без юридической поддержки люди часто
 					взыскивают в 2–3 раза меньше реальной стоимости ущерба.
 				</p>
@@ -156,7 +157,7 @@
 			<article class="step">
 				<h3>Шаг 1: Фиксация</h3>
 				<p>
-					Как только произошёл залив, сразу же напишите или звоните мне. Я сразу вышлю чёткую
+					Как только произошел залив, сразу же напишите или звоните мне. Я сразу вышлю четкую
 					инструкцию, что делать и как зафиксировать все повреждения, и проконтролирую, чтобы акт о
 					заливе был составлен максимально полно и грамотно. Это ваш главный документ в суде.
 				</p>
@@ -182,7 +183,7 @@
 				<h3>Шаг 3: Досудебная претензия</h3>
 				<p>
 					Прежде чем идти в суд, мы попробуем решить вопрос миром. Я подготовлю и направлю виновнику
-					юридически грамотную досудебную претензию. Иногда уже на этом этапе удаётся договориться о
+					юридически грамотную досудебную претензию. Иногда уже на этом этапе удается договориться о
 					компенсации, избегая судебных тяжб. Я сам веду все переговоры.
 				</p>
 			</article>
@@ -190,15 +191,62 @@
 			<article class="step">
 				<h3>Шаг 4: Суд и взыскание</h3>
 				<p>
-					Если договориться не удалось, мы идём в суд. Я подам исковое заявление, буду представлять
-					ваши интересы на каждом заседании и сделаю всё, чтобы суд принял решение в вашу пользу.
-					После получения исполнительного листа я проконтролирую, чтобы вы реально получили деньги.
+					Если договориться не удалось, мы идем в суд. Я подам исковое заявление, буду представлять
+					ваши интересы на каждом заседании и сделаю все, чтобы суд принял решение в вашу пользу.
+					После получения исполнительного листа я проконтролирую, чтобы вы реально получили деньги —
+					это отдельный этап, не «автоматическое» следствие решения.
+				</p>
+				<p>
+					Подробнее про исполнение —
+					<a href="#ispolnenie">от листа до денег на карте</a>. Образец иска и ловушка с реквизитами в
+					претензии —
+					<a href="/stati/zaliv-kvartiry-iskovoe-zayavlenie-v-sud">в статье про суд</a>.
 				</p>
 			</article>
 		</div>
 	</section>
 
-	<section class="section section--tint">
+	<section class="section section--tint" id={yuristPage.enforcement.id}>
+		<div class="container narrow">
+			<h2>{yuristPage.enforcement.title}</h2>
+			<p>{yuristPage.enforcement.lead}</p>
+			{#each yuristPage.enforcement.steps as step}
+				<article class="step">
+					<h3>{step.title}</h3>
+					<p>{step.text}</p>
+				</article>
+			{/each}
+			<div class="info-table-wrap">
+				<table class="info-table">
+					<caption>{yuristPage.enforcement.table.caption}</caption>
+					<thead>
+						<tr>
+							{#each yuristPage.enforcement.table.headers as header}
+								<th>{header}</th>
+							{/each}
+						</tr>
+					</thead>
+					<tbody>
+						{#each yuristPage.enforcement.table.rows as row}
+							<tr>
+								{#each row as cell}
+									<td>{cell}</td>
+								{/each}
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+			<p>{yuristPage.enforcement.note}</p>
+			<ul>
+				{#each yuristPage.enforcement.links as link}
+					<li><a href={link.href}>{link.label}</a></li>
+				{/each}
+			</ul>
+		</div>
+	</section>
+
+	<section class="section">
 		<div class="container narrow">
 			<h2>Реальные кейсы из практики</h2>
 			<ul class="cases">
@@ -238,16 +286,16 @@
 			</p>
 			<p>
 				<strong>Второе:</strong> обязательно присутствуйте при составлении акта о заливе. Внимательно
-				читайте каждую строчку. Если вы не согласны с причиной или объёмом повреждений — сделайте
+				читайте каждую строчку. Если вы не согласны с причиной или объемом повреждений — сделайте
 				письменную отметку «с актом не согласен, так как...» и укажите причину.
 			</p>
 			<p>
 				<strong>Третье:</strong> присутствуйте на оценке ущерба, которую заказывает потерпевший.
-				Фиксируйте всё на фото и видео. Если в отчёт включают старые дефекты или завышают цены — вы
+				Фиксируйте все на фото и видео. Если в отчет включают старые дефекты или завышают цены — вы
 				сможете это оспорить.
 			</p>
 			<p>
-				<strong>Четвёртое:</strong> не спешите платить любую сумму. Я помогу добиться снижения суммы
+				<strong>Четвертое:</strong> не спешите платить любую сумму. Я помогу добиться снижения суммы
 				взыскания. Если вы докажете, что потерпевший сам способствовал увеличению ущерба (не вызвал
 				аварийку, не просушил помещение), суд может уменьшить размер возмещения. Работаю с обеими
 				сторонами — и помогаю виновникам залива уменьшить сумму выплат.
@@ -363,7 +411,7 @@
 				<div class="eyebrow">Бесплатная оценка</div>
 				<div class="consultation-title">Опишите ситуацию — я свяжусь в течение часа</div>
 				<p>
-					Не откладывайте решение проблемы с заливом. Чем быстрее мы начнём действовать, тем выше
+					Не откладывайте решение проблемы с заливом. Чем быстрее мы начнем действовать, тем выше
 					шансы на полный успех.
 				</p>
 				<div class="direct-links">
@@ -775,6 +823,46 @@
 			background: var(--gold-light);
 			color: var(--ink);
 		}
+	}
+
+	.info-table-wrap {
+		overflow-x: auto;
+		margin: 1.25rem 0 1.5rem;
+		border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+		border-radius: 2px;
+	}
+
+	.info-table {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: 0.95rem;
+		line-height: 1.45;
+	}
+
+	.info-table caption {
+		caption-side: top;
+		text-align: left;
+		padding: 0.75rem 1rem;
+		font-weight: 600;
+		background: color-mix(in srgb, var(--ink) 4%, transparent);
+		border-bottom: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+	}
+
+	.info-table th,
+	.info-table td {
+		padding: 0.7rem 1rem;
+		text-align: left;
+		vertical-align: top;
+		border-bottom: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+	}
+
+	.info-table th {
+		font-weight: 600;
+		background: color-mix(in srgb, var(--ink) 3%, transparent);
+	}
+
+	.info-table tbody tr:last-child td {
+		border-bottom: none;
 	}
 
 	@media (max-width: 600px) {

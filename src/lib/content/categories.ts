@@ -19,7 +19,7 @@ export const categories: Category[] = [
 	{
 		slug: 'akt-o-zalive',
 		title: 'Акт о заливе',
-		description: 'Как правильно оформить акт о заливе квартиры и что в нём должно быть.'
+		description: 'Как правильно оформить акт о заливе квартиры и что в нем должно быть.'
 	},
 	{
 		slug: 'ocenka-i-ekspertiza',
