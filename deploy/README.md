@@ -14,7 +14,7 @@
 | БД | Postgres `:5432` | SQLite `./data/leads.sqlite` |
 | GitHub | — | https://github.com/BitaliyS/urist-zaliv.ru (**private**) |
 
-**Запрещено:** `docker compose down` в `/opt/ur-agent`; второй nginx на 80/443; трогать `.env` / Hermes / порты 5432/8011/3010 ЮрАгента; `upstream hostname` без resolver (см. ниже).
+**Запрещено:** `docker compose down` в `/opt/ur-agent`; второй nginx на 80/443; трогать `.env` / Hermes / порты 5432/8011/3010 ЮрАгента; `upstream hostname` без resolver (см. ниже); **называть compose-сервис `web`** на сети `ur-agent_internal` (коллизия DNS с кабинетом ЮрАгента → 404 на `/auth` и `/dashboard`). Сервис в compose: **`zaliv`**, `container_name: urist-zaliv-web`.
 
 ---
 

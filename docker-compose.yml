@@ -4,13 +4,16 @@
 # - наружу только 127.0.0.1:3020 — без своего :80/:443
 #   (3010 занят frontend ЮрАгента — НЕ занимать)
 # - TLS и публичный вход — через nginx ЮрАгента (server_name)
-# - сеть ur-agent_internal: чтобы nginx видел urist-zaliv-web:3000
+# - сеть ur-agent_internal: nginx резолвит container_name urist-zaliv-web:3000
+# - НИКОГДА не называть сервис `web` на ur-agent_internal — коллизия с ЮрАгентом
+#   (половина /auth и /dashboard уходила в этот контейнер → 404)
 # Канон деплоя: deploy/README.md
 
 name: urist-zaliv
 
 services:
-  web:
+  # Имя сервиса ≠ web: иначе Docker DNS alias `web` ломает кабинет ЮрАгента.
+  zaliv:
     build:
       context: .
       dockerfile: Dockerfile
@@ -42,8 +45,10 @@ services:
       # Только localhost хоста — nginx ЮрАгента проксирует сюда
       - '127.0.0.1:3020:3000'
     networks:
-      - default
-      - ur_agent_internal
+      default:
+      ur_agent_internal:
+        aliases:
+          - urist-zaliv-web
     healthcheck:
       test:
         [
